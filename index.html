@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owen's Tank Shooting Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+        }
+        canvas {
+            border: 4px solid #ffd700;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        #homeScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+        }
+        #homeScreen h1 {
+            font-size: 48px;
+            color: #2e7d32;
+            text-shadow: 3px 3px 0 #fff, -1px -1px 0 #fff;
+            margin-bottom: 10px;
+        }
+        #homeScreen h2 {
+            font-size: 24px;
+            color: #1565c0;
+            margin-bottom: 30px;
+        }
+        .difficulty-btn {
+            width: 200px;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 24px;
+            font-family: 'Comic Sans MS', cursive;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .difficulty-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .baby { background: #ffb6c1; color: #c71585; }
+        .easy { background: #90EE90; color: #228b22; }
+        .medium { background: #FFD700; color: #b8860b; }
+        .hard { background: #ff6b6b; color: #8b0000; }
+        #startBtn {
+            margin-top: 30px;
+            padding: 20px 60px;
+            font-size: 32px;
+            font-family: 'Comic Sans MS', cursive;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #startBtn:hover {
+            transform: scale(1.1);
+        }
+        .selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+        }
+        #gameOver h1 {
+            font-size: 48px;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+        #finalScore {
+            font-size: 36px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        #restartBtn {
+            padding: 20px 60px;
+            font-size: 28px;
+            font-family: 'Comic Sans MS', cursive;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        #controls {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+        <div id="homeScreen">
+            <h1>🎮 Owen's Tank Game! 🎮</h1>
+            <h2>Choose your difficulty:</h2>
+            <button class="difficulty-btn baby" onclick="selectDifficulty('baby')">👶 Baby</button>
+            <button class="difficulty-btn easy" onclick="selectDifficulty('easy')">😊 Easy</button>
+            <button class="difficulty-btn medium" onclick="selectDifficulty('medium')">😎 Medium</button>
+            <button class="difficulty-btn hard" onclick="selectDifficulty('hard')">🔥 Hard</button>
+            <button id="startBtn" onclick="startGame()">START!</button>
+        </div>
+
+        <div id="gameOver">
+            <h1>Game Over!</h1>
+            <div id="finalScore">Score: 0</div>
+            <button id="restartBtn" onclick="restartGame()">Play Again!</button>
+        </div>
+
+        <div id="controls">
+            ⬅️➡️ Move Tank | ⬆️⬇️ Aim Barrel | SPACE Shoot | W Switch Weapon
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameRunning = false;
+        let difficulty = 'easy';
+        let score = 0;
+        let health = 100;
+        let lastShootTime = 0;
+        let shootCooldown = 500;
+
+        // Difficulty settings (reduced spawn rates for easier gameplay)
+        const difficultySettings = {
+            baby: { enemySpeed: 0.3, spawnRate: 4500, damage: 5, healthRegen: 0.015, shootCooldown: 300, dropRate: 4000 },
+            easy: { enemySpeed: 0.5, spawnRate: 3500, damage: 8, healthRegen: 0.01, shootCooldown: 400, dropRate: 3500 },
+            medium: { enemySpeed: 0.8, spawnRate: 2800, damage: 12, healthRegen: 0.007, shootCooldown: 500, dropRate: 2800 },
+            hard: { enemySpeed: 1.2, spawnRate: 2200, damage: 18, healthRegen: 0.005, shootCooldown: 600, dropRate: 2000 }
+        };
+
+        // Enemy projectiles (bombs and fireballs)
+        let enemyProjectiles = [];
+
+        // Kill statistics
+        let killStats = {
+            tank: 0,
+            hog: 0,
+            ghost: 0,
+            helicopter: 0
+        };
+
+        // Terrain
+        let terrain = [];
+
+        // Player tank
+        let tank = {
+            x: 100,
+            y: 0,
+            width: 60,
+            height: 30,
+            speed: 3,
+            direction: 1,
+            barrelAngle: -30,
+            weapon: 'cannon',
+            color: '#4a7c23'
+        };
+
+        // Projectiles
+        let projectiles = [];
+
+        // Enemies
+        let enemies = [];
+        let lastSpawnTime = 0;
+
+        // Input
+        let keys = {};
+
+        // Generate hilly terrain
+        function generateTerrain() {
+            terrain = [];
+            let y = canvas.height - 150;
+            const segments = 100;
+            const segmentWidth = canvas.width / segments;
+
+            for (let i = 0; i <= segments; i++) {
+                const x = i * segmentWidth;
+                // Create rolling hills using sine waves
+                const hill1 = Math.sin(i * 0.1) * 50;
+                const hill2 = Math.sin(i * 0.05 + 2) * 30;
+                const hill3 = Math.sin(i * 0.02) * 40;
+                terrain.push({
+                    x: x,
+                    y: y + hill1 + hill2 + hill3
+                });
+            }
+        }
+
+        // Get terrain height at x position
+        function getTerrainHeight(x) {
+            const segmentWidth = canvas.width / (terrain.length - 1);
+            const index = Math.floor(x / segmentWidth);
+            if (index < 0) return terrain[0].y;
+            if (index >= terrain.length - 1) return terrain[terrain.length - 1].y;
+
+            const t = (x - terrain[index].x) / segmentWidth;
+            return terrain[index].y * (1 - t) + terrain[index + 1].y * t;
+        }
+
+        // Get terrain angle at x position
+        function getTerrainAngle(x) {
+            const segmentWidth = canvas.width / (terrain.length - 1);
+            const index = Math.floor(x / segmentWidth);
+            if (index < 0 || index >= terrain.length - 1) return 0;
+
+            const dx = terrain[index + 1].x - terrain[index].x;
+            const dy = terrain[index + 1].y - terrain[index].y;
+            return Math.atan2(dy, dx);
+        }
+
+        // Draw terrain
+        function drawTerrain() {
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.lineTo(terrain[0].x, terrain[0].y);
+
+            for (let i = 1; i < terrain.length; i++) {
+                ctx.lineTo(terrain[i].x, terrain[i].y);
+            }
+
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.closePath();
+
+            // Gradient for grass
+            const gradient = ctx.createLinearGradient(0, canvas.height - 200, 0, canvas.height);
+            gradient.addColorStop(0, '#7cba3d');
+            gradient.addColorStop(0.3, '#5a9a2a');
+            gradient.addColorStop(1, '#3d6b1a');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw grass blades
+            ctx.strokeStyle = '#4a8a25';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < terrain.length; i += 2) {
+                const x = terrain[i].x;
+                const y = terrain[i].y;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 3, y - 10);
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 3, y - 8);
+                ctx.stroke();
+            }
+        }
+
+        // Draw tank
+        function drawTank(t, isPlayer = true) {
+            const groundY = getTerrainHeight(t.x);
+            const angle = getTerrainAngle(t.x);
+            t.y = groundY;
+
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.rotate(angle);
+
+            // Tank body
+            ctx.fillStyle = t.color;
+            ctx.beginPath();
+            ctx.roundRect(-t.width/2, -t.height - 5, t.width, t.height, 5);
+            ctx.fill();
+
+            // Tank top
+            ctx.fillStyle = isPlayer ? '#3d6b1a' : '#6b1a1a';
+            ctx.beginPath();
+            ctx.arc(0, -t.height - 5, 15, Math.PI, 0);
+            ctx.fill();
+
+            // Wheels
+            ctx.fillStyle = '#333';
+            const wheelY = -8;
+            for (let i = -20; i <= 20; i += 20) {
+                ctx.beginPath();
+                ctx.arc(i, wheelY, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#555';
+                ctx.beginPath();
+                ctx.arc(i, wheelY, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#333';
+            }
+
+            // Barrel
+            if (isPlayer) {
+                ctx.save();
+                ctx.translate(0, -t.height - 5);
+                const barrelAngle = t.direction === 1 ?
+                    t.barrelAngle * Math.PI / 180 :
+                    (180 - t.barrelAngle) * Math.PI / 180;
+                ctx.rotate(barrelAngle);
+
+                // Barrel color based on weapon
+                ctx.fillStyle = t.weapon === 'laser' ? '#ff4444' : '#2a4a0f';
+                ctx.fillRect(0, -4, 40, 8);
+                ctx.fillStyle = t.weapon === 'laser' ? '#ff8888' : '#1a3a05';
+                ctx.fillRect(35, -6, 10, 12);
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            // Draw direction indicator for player
+            if (isPlayer) {
+                ctx.fillStyle = '#ffd700';
+                const indicatorX = t.x + (t.direction === 1 ? 40 : -40);
+                ctx.beginPath();
+                ctx.moveTo(indicatorX, t.y - t.height - 30);
+                ctx.lineTo(indicatorX + (t.direction === 1 ? 10 : -10), t.y - t.height - 25);
+                ctx.lineTo(indicatorX, t.y - t.height - 20);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        // Draw enemy
+        function drawEnemy(enemy) {
+            ctx.save();
+
+            switch(enemy.type) {
+                case 'tank':
+                    drawEnemyTank(enemy);
+                    break;
+                case 'hog':
+                    drawHog(enemy);
+                    break;
+                case 'ghost':
+                    drawGhost(enemy);
+                    break;
+                case 'helicopter':
+                    drawHelicopter(enemy);
+                    break;
+            }
+
+            ctx.restore();
+        }
+
+        function drawEnemyTank(enemy) {
+            const groundY = getTerrainHeight(enemy.x);
+            const angle = getTerrainAngle(enemy.x);
+            enemy.y = groundY;
+
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(angle);
+
+            // Body
+            ctx.fillStyle = enemy.color;
+            ctx.beginPath();
+            ctx.roundRect(-25, -25, 50, 25, 5);
+            ctx.fill();
+
+            // Top
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.arc(0, -25, 12, Math.PI, 0);
+            ctx.fill();
+
+            // Wheels
+            ctx.fillStyle = '#222';
+            for (let i = -15; i <= 15; i += 15) {
+                ctx.beginPath();
+                ctx.arc(i, -5, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Barrel pointing at player
+            ctx.fillStyle = '#4a0000';
+            const barrelDir = enemy.x > tank.x ? Math.PI : 0;
+            ctx.save();
+            ctx.translate(0, -25);
+            ctx.rotate(barrelDir - 0.3);
+            ctx.fillRect(0, -3, 30, 6);
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function drawHog(enemy) {
+            const groundY = getTerrainHeight(enemy.x);
+            enemy.y = groundY;
+
+            ctx.translate(enemy.x, enemy.y - 20);
+
+            // Body
+            ctx.fillStyle = '#d4a574';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 25, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Head
+            ctx.fillStyle = '#c49464';
+            ctx.beginPath();
+            ctx.ellipse(enemy.direction * 20, -5, 15, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Snout
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(enemy.direction * 32, -3, 8, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(enemy.direction * 25, -10, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Legs
+            ctx.fillStyle = '#c49464';
+            ctx.fillRect(-15, 12, 6, 12);
+            ctx.fillRect(10, 12, 6, 12);
+
+            // Ears
+            ctx.beginPath();
+            ctx.ellipse(enemy.direction * 12, -25, 6, 10, enemy.direction * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawGhost(enemy) {
+            ctx.translate(enemy.x, enemy.y);
+
+            // Ghostly glow
+            ctx.shadowColor = '#88ffff';
+            ctx.shadowBlur = 20;
+
+            // Body
+            ctx.fillStyle = `rgba(200, 230, 255, ${0.6 + Math.sin(Date.now() / 200) * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(0, -20, 25, Math.PI, 0);
+            ctx.lineTo(25, 10);
+            // Wavy bottom
+            for (let i = 25; i >= -25; i -= 10) {
+                ctx.quadraticCurveTo(i - 5, 20, i - 10, 10);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(-8, -20, 5, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(8, -20, 5, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mouth
+            ctx.beginPath();
+            ctx.arc(0, -5, 8, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function drawHelicopter(enemy) {
+            ctx.translate(enemy.x, enemy.y);
+
+            // Body
+            ctx.fillStyle = enemy.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 35, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cockpit
+            ctx.fillStyle = '#87CEEB';
+            ctx.beginPath();
+            ctx.ellipse(20 * enemy.direction, -2, 15, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tail
+            ctx.fillStyle = enemy.color;
+            ctx.beginPath();
+            ctx.moveTo(-30 * enemy.direction, 0);
+            ctx.lineTo(-60 * enemy.direction, -5);
+            ctx.lineTo(-60 * enemy.direction, 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tail rotor
+            ctx.fillStyle = '#333';
+            ctx.fillRect(-58 * enemy.direction, -15, 4, 30);
+
+            // Main rotor (animated)
+            ctx.fillStyle = '#444';
+            const rotorAngle = Date.now() / 30;
+            ctx.save();
+            ctx.translate(0, -20);
+            ctx.rotate(rotorAngle);
+            ctx.fillRect(-50, -3, 100, 6);
+            ctx.restore();
+
+            // Rotor hub
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.arc(0, -20, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Landing skids
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-20, 18);
+            ctx.lineTo(-20, 25);
+            ctx.lineTo(20, 25);
+            ctx.lineTo(20, 18);
+            ctx.stroke();
+        }
+
+        // Spawn enemy
+        function spawnEnemy() {
+            const settings = difficultySettings[difficulty];
+            // Weight ground enemies heavily (75% ground, 25% air)
+            const rand = Math.random();
+            let type;
+            if (rand < 0.40) {
+                type = 'tank';
+            } else if (rand < 0.75) {
+                type = 'hog';
+            } else if (rand < 0.88) {
+                type = 'ghost';
+            } else {
+                type = 'helicopter';
+            }
+
+            const fromLeft = Math.random() > 0.5;
+            const enemy = {
+                type: type,
+                x: fromLeft ? -50 : canvas.width + 50,
+                y: type === 'helicopter' || type === 'ghost' ?
+                    80 + Math.random() * 120 :
+                    canvas.height - 100,
+                direction: fromLeft ? 1 : -1,
+                speed: settings.enemySpeed * (0.8 + Math.random() * 0.4),
+                color: type === 'tank' ? '#c0392b' : '#e74c3c',
+                health: 1,
+                points: type === 'helicopter' ? 30 : type === 'ghost' ? 25 : type === 'hog' ? 15 : 20,
+                damage: settings.damage,
+                lastDropTime: Date.now()
+            };
+
+            // Adjust speeds by type
+            if (type === 'helicopter') enemy.speed *= 1.5;
+            if (type === 'ghost') enemy.speed *= 0.7;
+            if (type === 'hog') enemy.speed *= 1.2;
+
+            enemies.push(enemy);
+        }
+
+        // Shoot
+        function shoot() {
+            const now = Date.now();
+            const settings = difficultySettings[difficulty];
+
+            if (now - lastShootTime < settings.shootCooldown) return;
+            lastShootTime = now;
+
+            const groundY = getTerrainHeight(tank.x);
+            const terrainAngle = getTerrainAngle(tank.x);
+
+            const barrelAngle = tank.direction === 1 ?
+                tank.barrelAngle * Math.PI / 180 + terrainAngle :
+                (180 - tank.barrelAngle) * Math.PI / 180 + terrainAngle;
+
+            const startX = tank.x + Math.cos(barrelAngle) * 45;
+            const startY = groundY - tank.height - 5 + Math.sin(barrelAngle) * 45;
+
+            const speed = tank.weapon === 'laser' ? 25 : 15;
+
+            projectiles.push({
+                x: startX,
+                y: startY,
+                vx: Math.cos(barrelAngle) * speed,
+                vy: Math.sin(barrelAngle) * speed,
+                type: tank.weapon,
+                trail: []
+            });
+        }
+
+        // Update projectiles
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+
+                // Store trail
+                p.trail.push({ x: p.x, y: p.y });
+                if (p.trail.length > 10) p.trail.shift();
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Apply gravity to cannon
+                if (p.type === 'cannon') {
+                    p.vy += 0.3;
+                }
+
+                // Check terrain collision
+                if (p.y > getTerrainHeight(p.x)) {
+                    // Explosion effect
+                    createExplosion(p.x, p.y);
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Check enemy collision
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const e = enemies[j];
+                    const dx = p.x - e.x;
+                    const dy = p.y - e.y;
+                    const hitRadius = e.type === 'helicopter' ? 40 : 30;
+
+                    if (dx * dx + dy * dy < hitRadius * hitRadius) {
+                        createExplosion(e.x, e.y);
+                        score += e.points;
+                        killStats[e.type]++;
+                        enemies.splice(j, 1);
+                        projectiles.splice(i, 1);
+                        break;
+                    }
+                }
+
+                // Remove if off screen
+                if (p.x < -50 || p.x > canvas.width + 50 || p.y < -50) {
+                    projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // Explosions
+        let explosions = [];
+
+        function createExplosion(x, y) {
+            explosions.push({
+                x: x,
+                y: y,
+                radius: 5,
+                maxRadius: 30,
+                alpha: 1
+            });
+        }
+
+        function updateExplosions() {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const exp = explosions[i];
+                exp.radius += 2;
+                exp.alpha -= 0.05;
+
+                if (exp.alpha <= 0) {
+                    explosions.splice(i, 1);
+                }
+            }
+        }
+
+        function drawExplosions() {
+            explosions.forEach(exp => {
+                const gradient = ctx.createRadialGradient(
+                    exp.x, exp.y, 0,
+                    exp.x, exp.y, exp.radius
+                );
+                gradient.addColorStop(0, `rgba(255, 255, 200, ${exp.alpha})`);
+                gradient.addColorStop(0.3, `rgba(255, 200, 50, ${exp.alpha})`);
+                gradient.addColorStop(0.7, `rgba(255, 100, 0, ${exp.alpha * 0.5})`);
+                gradient.addColorStop(1, `rgba(100, 0, 0, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Draw projectiles
+        function drawProjectiles() {
+            projectiles.forEach(p => {
+                if (p.type === 'laser') {
+                    // Laser beam with glow
+                    ctx.shadowColor = '#ff0000';
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = '#ff4444';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    if (p.trail.length > 0) {
+                        ctx.lineTo(p.trail[0].x, p.trail[0].y);
+                    }
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#ffaaaa';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Cannonball
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Highlight
+                    ctx.fillStyle = '#666';
+                    ctx.beginPath();
+                    ctx.arc(p.x - 2, p.y - 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Trail
+                    ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    p.trail.forEach((t, idx) => {
+                        if (idx === 0) ctx.moveTo(t.x, t.y);
+                        else ctx.lineTo(t.x, t.y);
+                    });
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // Update enemies
+        function updateEnemies() {
+            const settings = difficultySettings[difficulty];
+            const now = Date.now();
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.x += e.speed * e.direction;
+
+                // Floating motion for flying enemies
+                if (e.type === 'ghost') {
+                    e.y += Math.sin(Date.now() / 300 + i) * 0.5;
+                }
+                if (e.type === 'helicopter') {
+                    e.y += Math.sin(Date.now() / 500 + i) * 0.3;
+                }
+
+                // Helicopters and ghosts drop projectiles
+                if ((e.type === 'helicopter' || e.type === 'ghost') &&
+                    now - e.lastDropTime > settings.dropRate &&
+                    e.x > 50 && e.x < canvas.width - 50) {
+
+                    e.lastDropTime = now;
+
+                    if (e.type === 'helicopter') {
+                        // Drop a bomb
+                        enemyProjectiles.push({
+                            x: e.x,
+                            y: e.y + 25,
+                            vx: e.speed * e.direction * 0.5,
+                            vy: 1,
+                            type: 'bomb',
+                            damage: settings.damage * 0.7
+                        });
+                    } else {
+                        // Ghost drops a fireball
+                        enemyProjectiles.push({
+                            x: e.x,
+                            y: e.y + 20,
+                            vx: (tank.x - e.x) * 0.005,
+                            vy: 2,
+                            type: 'fireball',
+                            damage: settings.damage * 0.5
+                        });
+                    }
+                }
+
+                // Check if enemy reached player
+                const dx = e.x - tank.x;
+                if (Math.abs(dx) < 50 && e.y > canvas.height - 250) {
+                    health -= e.damage;
+                    createExplosion(e.x, e.y);
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                // Remove if off screen (passed through)
+                if ((e.direction === 1 && e.x > canvas.width + 100) ||
+                    (e.direction === -1 && e.x < -100)) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // Health regeneration
+            health = Math.min(100, health + settings.healthRegen);
+        }
+
+        // Update enemy projectiles
+        function updateEnemyProjectiles() {
+            const tankY = getTerrainHeight(tank.x);
+
+            for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+                const p = enemyProjectiles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Gravity
+                if (p.type === 'bomb') {
+                    p.vy += 0.15;
+                } else {
+                    p.vy += 0.08;
+                }
+
+                // Check collision with player tank
+                const dx = p.x - tank.x;
+                const dy = p.y - (tankY - tank.height/2);
+                if (Math.abs(dx) < 40 && Math.abs(dy) < 30) {
+                    health -= p.damage;
+                    createExplosion(p.x, p.y);
+                    enemyProjectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Check terrain collision
+                if (p.y > getTerrainHeight(p.x)) {
+                    createExplosion(p.x, getTerrainHeight(p.x));
+                    enemyProjectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Remove if off screen
+                if (p.x < -50 || p.x > canvas.width + 50 || p.y > canvas.height + 50) {
+                    enemyProjectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // Draw enemy projectiles
+        function drawEnemyProjectiles() {
+            enemyProjectiles.forEach(p => {
+                if (p.type === 'bomb') {
+                    // Helicopter bomb - dark oval shape
+                    ctx.fillStyle = '#2c2c2c';
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, p.y, 8, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Fins
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x - 6, p.y - 10);
+                    ctx.lineTo(p.x, p.y - 8);
+                    ctx.lineTo(p.x + 6, p.y - 10);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Highlight
+                    ctx.fillStyle = '#444';
+                    ctx.beginPath();
+                    ctx.ellipse(p.x - 2, p.y - 3, 3, 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Ghost fireball - spooky green/purple
+                    ctx.shadowColor = '#9932CC';
+                    ctx.shadowBlur = 15;
+
+                    // Outer glow
+                    ctx.fillStyle = 'rgba(153, 50, 204, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Inner fire
+                    ctx.fillStyle = '#DA70D6';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Core
+                    ctx.fillStyle = '#FFB6C1';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0;
+                }
+            });
+        }
+
+        // Draw UI
+        function drawUI() {
+            // Health bar background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(20, 20, 200, 25);
+
+            // Health bar
+            const healthColor = health > 60 ? '#4CAF50' : health > 30 ? '#FFC107' : '#f44336';
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(20, 20, health * 2, 25);
+
+            // Health bar border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(20, 20, 200, 25);
+
+            // Health text
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Comic Sans MS';
+            ctx.fillText(`❤️ ${Math.round(health)}%`, 85, 38);
+
+            // Score
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 28px Comic Sans MS';
+            ctx.fillText(`⭐ ${score}`, 20, 75);
+
+            // Weapon indicator
+            ctx.fillStyle = tank.weapon === 'laser' ? '#ff4444' : '#8B4513';
+            ctx.font = 'bold 20px Comic Sans MS';
+            ctx.fillText(tank.weapon === 'laser' ? '🔴 LASER' : '💣 CANNON', canvas.width - 130, 40);
+
+            // Cooldown indicator
+            const now = Date.now();
+            const settings = difficultySettings[difficulty];
+            const cooldownProgress = Math.min(1, (now - lastShootTime) / settings.shootCooldown);
+
+            ctx.fillStyle = '#333';
+            ctx.fillRect(canvas.width - 130, 50, 100, 10);
+            ctx.fillStyle = cooldownProgress >= 1 ? '#4CAF50' : '#FFC107';
+            ctx.fillRect(canvas.width - 130, 50, 100 * cooldownProgress, 10);
+        }
+
+        // Draw background
+        function drawBackground() {
+            // Sky gradient
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#1e90ff');
+            skyGradient.addColorStop(0.5, '#87CEEB');
+            skyGradient.addColorStop(1, '#b0e0e6');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            drawCloud(100, 80, 40);
+            drawCloud(300, 50, 50);
+            drawCloud(600, 100, 35);
+            drawCloud(800, 60, 45);
+
+            // Sun
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(canvas.width - 80, 80, 40, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sun glow
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(canvas.width - 80, 80, 55, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawCloud(x, y, size) {
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.8, y - size * 0.2, size * 0.7, 0, Math.PI * 2);
+            ctx.arc(x + size * 1.4, y, size * 0.8, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.6, y + size * 0.3, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Handle input
+        function handleInput() {
+            if (keys['ArrowLeft']) {
+                tank.x -= tank.speed;
+                tank.direction = -1;
+            }
+            if (keys['ArrowRight']) {
+                tank.x += tank.speed;
+                tank.direction = 1;
+            }
+            if (keys['ArrowUp']) {
+                tank.barrelAngle = Math.max(-60, tank.barrelAngle - 1);
+            }
+            if (keys['ArrowDown']) {
+                tank.barrelAngle = Math.min(10, tank.barrelAngle + 1);
+            }
+
+            // Keep tank in bounds
+            tank.x = Math.max(50, Math.min(canvas.width - 50, tank.x));
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            drawBackground();
+
+            // Draw terrain
+            drawTerrain();
+
+            // Handle input
+            handleInput();
+
+            // Spawn enemies
+            const now = Date.now();
+            const settings = difficultySettings[difficulty];
+            if (now - lastSpawnTime > settings.spawnRate) {
+                spawnEnemy();
+                lastSpawnTime = now;
+            }
+
+            // Update
+            updateProjectiles();
+            updateEnemies();
+            updateEnemyProjectiles();
+            updateExplosions();
+
+            // Draw enemies
+            enemies.forEach(e => drawEnemy(e));
+
+            // Draw tank
+            drawTank(tank, true);
+
+            // Draw projectiles
+            drawProjectiles();
+
+            // Draw enemy projectiles
+            drawEnemyProjectiles();
+
+            // Draw explosions
+            drawExplosions();
+
+            // Draw UI
+            drawUI();
+
+            // Check game over
+            if (health <= 0) {
+                gameOver();
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Select difficulty
+        function selectDifficulty(diff) {
+            difficulty = diff;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        // Start game
+        function startGame() {
+            document.getElementById('homeScreen').style.display = 'none';
+            generateTerrain();
+            tank.x = 100;
+            tank.barrelAngle = -30;
+            tank.direction = 1;
+            tank.weapon = 'cannon';
+            health = 100;
+            score = 0;
+            projectiles = [];
+            enemies = [];
+            enemyProjectiles = [];
+            explosions = [];
+            killStats = { tank: 0, hog: 0, ghost: 0, helicopter: 0 };
+            lastSpawnTime = Date.now();
+            lastShootTime = 0;
+            gameRunning = true;
+            gameLoop();
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = `Score: ${score} ⭐`;
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        // Restart game
+        function restartGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('homeScreen').style.display = 'flex';
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+
+            if (e.code === 'Space' && gameRunning) {
+                e.preventDefault();
+                shoot();
+            }
+
+            if (e.code === 'KeyW' && gameRunning) {
+                tank.weapon = tank.weapon === 'cannon' ? 'laser' : 'cannon';
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Prevent arrow key scrolling
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        // Select easy by default
+        document.querySelector('.easy').classList.add('selected');
+    </script>
+</body>
+</html>
