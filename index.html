@@ -238,12 +238,15 @@
             align-items: center;
             gap: 3px;
         }
+        #topLeftControls {
+            position: absolute;
+            left: 5px;
+            top: 80px;
+        }
         #topRightControls {
             position: absolute;
             right: 5px;
-            top: 5px;
-            display: flex;
-            gap: 3px;
+            top: 65px;
         }
         .fire-btn {
             width: 55px;
@@ -406,20 +409,22 @@
         <!-- Mobile Controls -->
         <div id="mobileControls">
             <div id="leftControls">
-                <div id="aimControls">
-                    <button class="mobile-btn" id="btnUp">▲</button>
-                    <button class="mobile-btn" id="btnDown">▼</button>
-                </div>
                 <div id="moveControls">
                     <button class="mobile-btn" id="btnLeft">◀</button>
                     <button class="mobile-btn" id="btnRight">▶</button>
                 </div>
             </div>
             <div id="rightControls">
+                <div id="aimControls">
+                    <button class="mobile-btn" id="btnUp">▲</button>
+                    <button class="mobile-btn" id="btnDown">▼</button>
+                </div>
                 <button class="mobile-btn fire-btn" id="btnFire">FIRE</button>
             </div>
-            <div id="topRightControls">
+            <div id="topLeftControls">
                 <button class="mobile-btn mobile-btn-small weapon-btn" id="btnWeapon">WEAPON</button>
+            </div>
+            <div id="topRightControls">
                 <button class="mobile-btn mobile-btn-small quit-btn" id="btnQuit">QUIT</button>
             </div>
         </div>
