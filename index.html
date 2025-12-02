@@ -17,6 +17,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
         }
         body {
             display: flex;
@@ -24,7 +25,7 @@
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
             overflow: hidden;
         }
         #gameContainer {
@@ -170,24 +171,30 @@
             color: #fff;
             font-size: 14px;
         }
-        /* Mobile Controls */
+        /* Mobile Controls - hidden by default, shown via JS during gameplay */
         #mobileControls {
             display: none;
             position: absolute;
-            bottom: 10px;
+            top: 0;
             left: 0;
             width: 100%;
-            padding: 0 10px;
-            box-sizing: border-box;
+            height: 100%;
+            pointer-events: none;
+        }
+        #mobileControls.active {
+            display: block;
+        }
+        #mobileControls > * {
+            pointer-events: auto;
         }
         .mobile-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            border: 3px solid rgba(255,255,255,0.5);
+            border: 2px solid rgba(255,255,255,0.5);
             background: rgba(0,0,0,0.4);
             color: white;
-            font-size: 24px;
+            font-size: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -199,71 +206,130 @@
             background: rgba(255,255,255,0.3);
         }
         .mobile-btn-small {
-            width: 50px;
-            height: 50px;
-            font-size: 14px;
+            width: 55px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 10px;
         }
         #leftControls {
             position: absolute;
-            left: 10px;
-            bottom: 10px;
+            left: 5px;
+            bottom: 5px;
             display: flex;
-            gap: 5px;
+            gap: 3px;
         }
         #rightControls {
             position: absolute;
-            right: 10px;
-            bottom: 10px;
+            right: 5px;
+            bottom: 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 3px;
         }
         #topRightControls {
             position: absolute;
-            right: 10px;
-            top: 70px;
+            right: 5px;
+            top: 65px;
             display: flex;
-            flex-direction: column;
             gap: 5px;
         }
         #aimControls {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            margin-bottom: 5px;
+            gap: 3px;
+            margin-bottom: 3px;
         }
         #moveControls {
             display: flex;
-            gap: 5px;
+            gap: 3px;
         }
         .fire-btn {
-            width: 80px;
-            height: 80px;
+            width: 65px;
+            height: 65px;
             background: rgba(255,50,50,0.6);
             border-color: rgba(255,100,100,0.8);
-            font-size: 16px;
+            font-size: 14px;
         }
         .weapon-btn {
             background: rgba(100,100,255,0.5);
             border-color: rgba(150,150,255,0.8);
-            font-size: 12px;
         }
         .quit-btn {
             background: rgba(255,100,100,0.5);
             border-color: rgba(255,150,150,0.8);
-            font-size: 12px;
         }
-        @media (pointer: coarse), (max-width: 1024px) {
-            #mobileControls {
-                display: block;
-            }
+        /* Mobile styles */
+        @media (max-width: 1024px) {
             #controls {
                 display: none;
             }
             canvas {
                 max-width: 100vw;
-                max-height: 70vh;
+                max-height: 85vh;
+            }
+            #homeScreen {
+                padding: 15px;
+                overflow-y: auto;
+            }
+            #homeScreen h1 {
+                font-size: 28px;
+                margin-bottom: 8px;
+            }
+            #homeScreen h2 {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+            .difficulty-btn {
+                padding: 10px 15px;
+                font-size: 16px;
+                margin: 3px;
+            }
+            #startBtn {
+                margin-top: 15px;
+                padding: 15px 40px;
+                font-size: 24px;
+            }
+            #gameOver h1 {
+                font-size: 32px;
+            }
+            #finalScore {
+                font-size: 24px;
+            }
+            #killStats {
+                padding: 10px 15px;
+            }
+            #killStats h3 {
+                font-size: 16px;
+            }
+            .stat-row {
+                font-size: 14px;
+                margin: 5px 0;
+            }
+            #restartBtn {
+                padding: 12px 40px;
+                font-size: 20px;
+            }
+        }
+        @media (max-width: 480px) {
+            #homeScreen h1 {
+                font-size: 22px;
+            }
+            #homeScreen h2 {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            .difficulty-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            #startBtn {
+                padding: 12px 30px;
+                font-size: 20px;
+            }
+            #dedication {
+                font-size: 12px !important;
+                margin-top: 15px !important;
             }
         }
     </style>
@@ -282,7 +348,7 @@
                 <button class="difficulty-btn hard" onclick="selectDifficulty('hard')">🔥 Hard</button>
             </div>
             <button id="startBtn" onclick="startGame()">START!</button>
-            <p style="margin-top: 25px; font-size: 16px; color: #444; max-width: 450px; text-align: center; line-height: 1.6; font-style: italic;">
+            <p id="dedication" style="margin-top: 25px; font-size: 16px; color: #444; max-width: 450px; text-align: center; line-height: 1.6; font-style: italic; padding: 0 10px;">
                 This game was created per my nephew Owen's amazing ideas; love you, from Uncle Lei
             </p>
         </div>
@@ -292,6 +358,7 @@
             <div id="finalScore">Score: 0</div>
             <div id="killStats">
                 <h3>Battle Statistics</h3>
+                <div class="stat-row" style="color: #98FB98;">Difficulty: <span id="statDifficulty">Easy</span></div>
                 <div class="stat-row" style="color: #87CEEB;">Survival Time: <span id="statTime">0:00</span></div>
                 <div class="stat-row" style="border-bottom: 1px solid #555; padding-bottom: 8px; margin-bottom: 8px;"></div>
                 <div class="stat-row">Tanks: <span id="statTanks">0</span></div>
@@ -321,7 +388,7 @@
                 <button class="mobile-btn fire-btn" id="btnFire">FIRE</button>
             </div>
             <div id="topRightControls">
-                <button class="mobile-btn mobile-btn-small weapon-btn" id="btnWeapon">SWAP</button>
+                <button class="mobile-btn mobile-btn-small weapon-btn" id="btnWeapon">WEAPON</button>
                 <button class="mobile-btn mobile-btn-small quit-btn" id="btnQuit">QUIT</button>
             </div>
         </div>
@@ -343,6 +410,106 @@
         let lastShootTime = 0;
         let shootCooldown = 500;
         let gameStartTime = 0;
+
+        // Sound system using Web Audio API (works on iOS)
+        let audioContext = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (audioContext) return;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Web Audio not supported');
+                soundEnabled = false;
+            }
+        }
+
+        // Unlock audio on iOS (must be called from user interaction)
+        function unlockAudio() {
+            if (!audioContext) initAudio();
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Generate sound effects programmatically
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            const now = audioContext.currentTime;
+
+            switch(type) {
+                case 'cannon':
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(150, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.2);
+                    break;
+
+                case 'laser':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(800, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.15);
+                    break;
+
+                case 'explosion':
+                    // Use noise for explosion
+                    const bufferSize = audioContext.sampleRate * 0.3;
+                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+                    }
+                    const noise = audioContext.createBufferSource();
+                    noise.buffer = buffer;
+                    const noiseGain = audioContext.createGain();
+                    const noiseFilter = audioContext.createBiquadFilter();
+                    noiseFilter.type = 'lowpass';
+                    noiseFilter.frequency.setValueAtTime(1000, now);
+                    noiseFilter.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(audioContext.destination);
+                    noiseGain.gain.setValueAtTime(0.4, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    noise.start(now);
+                    noise.stop(now + 0.3);
+                    return;
+
+                case 'hit':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(200, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.1);
+                    break;
+
+                case 'enemyShoot':
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(300, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.1);
+                    break;
+            }
+        }
 
         // Difficulty settings (reduced spawn rates for easier gameplay)
         // minSpawnRate is the fastest spawn rate after ramping up
@@ -809,6 +976,9 @@
             if (now - lastShootTime < settings.shootCooldown) return;
             lastShootTime = now;
 
+            // Play shooting sound
+            playSound(tank.weapon);
+
             const groundY = getTerrainHeight(tank.x);
             const terrainAngle = getTerrainAngle(tank.x);
 
@@ -865,6 +1035,7 @@
 
                     if (dx * dx + dy * dy < hitRadius * hitRadius) {
                         createExplosion(e.x, e.y);
+                        playSound('explosion');
                         score += e.points;
                         killStats[e.type]++;
                         enemies.splice(j, 1);
@@ -992,6 +1163,7 @@
                     e.x > 50 && e.x < canvas.width - 50) {
 
                     e.lastDropTime = now;
+                    playSound('enemyShoot');
 
                     if (e.type === 'helicopter') {
                         // Drop a bomb
@@ -1021,6 +1193,7 @@
                 if (Math.abs(dx) < 50 && e.y > canvas.height - 250) {
                     health -= e.damage;
                     createExplosion(e.x, e.y);
+                    playSound('hit');
                     enemies.splice(i, 1);
                     continue;
                 }
@@ -1059,6 +1232,7 @@
                 if (Math.abs(dx) < 40 && Math.abs(dy) < 30) {
                     health -= p.damage;
                     createExplosion(p.x, p.y);
+                    playSound('hit');
                     enemyProjectiles.splice(i, 1);
                     continue;
                 }
@@ -1316,8 +1490,19 @@
         }
 
         // Start game
+        // Check if device is touch-enabled
+        function isTouchDevice() {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024;
+        }
+
         function startGame() {
             document.getElementById('homeScreen').style.display = 'none';
+            // Initialize and unlock audio (required for iOS)
+            unlockAudio();
+            // Show mobile controls on touch devices
+            if (isTouchDevice()) {
+                document.getElementById('mobileControls').classList.add('active');
+            }
             generateTerrain();
             tank.x = 100;
             tank.barrelAngle = -30;
@@ -1340,11 +1525,15 @@
         // Show end screen with stats
         function showEndScreen(isQuit) {
             gameRunning = false;
+            // Hide mobile controls
+            document.getElementById('mobileControls').classList.remove('active');
             document.getElementById('gameOverTitle').textContent = isQuit ? 'Game Ended' : 'Game Over!';
             document.getElementById('gameOverTitle').style.color = isQuit ? '#ffd700' : '#ff6b6b';
             document.getElementById('finalScore').textContent = `Score: ${score} ⭐`;
 
             // Update statistics
+            const difficultyNames = { baby: 'Baby', easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+            document.getElementById('statDifficulty').textContent = difficultyNames[difficulty];
             document.getElementById('statTime').textContent = getGameTime();
             document.getElementById('statTanks').textContent = killStats.tank;
             document.getElementById('statHogs').textContent = killStats.hog;
