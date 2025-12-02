@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!--
+    Owen's Tank Shooting Game
+
+    Copyright (c) 2024 Lei Tian, LT Innovations LLC
+    All rights reserved.
+
+    Contact: tkltian@gmail.com
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -51,11 +59,18 @@
             color: #1565c0;
             margin-bottom: 30px;
         }
+        .difficulty-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
         .difficulty-btn {
-            width: 200px;
-            padding: 15px 30px;
-            margin: 10px;
-            font-size: 24px;
+            width: auto;
+            padding: 12px 20px;
+            margin: 5px;
+            font-size: 20px;
             font-family: 'Comic Sans MS', cursive;
             border: none;
             border-radius: 25px;
@@ -260,11 +275,16 @@
         <div id="homeScreen">
             <h1>🎮 Owen's Tank Game! 🎮</h1>
             <h2>Choose your difficulty:</h2>
-            <button class="difficulty-btn baby" onclick="selectDifficulty('baby')">👶 Baby</button>
-            <button class="difficulty-btn easy" onclick="selectDifficulty('easy')">😊 Easy</button>
-            <button class="difficulty-btn medium" onclick="selectDifficulty('medium')">😎 Medium</button>
-            <button class="difficulty-btn hard" onclick="selectDifficulty('hard')">🔥 Hard</button>
+            <div class="difficulty-container">
+                <button class="difficulty-btn baby" onclick="selectDifficulty('baby')">👶 Baby</button>
+                <button class="difficulty-btn easy" onclick="selectDifficulty('easy')">😊 Easy</button>
+                <button class="difficulty-btn medium" onclick="selectDifficulty('medium')">😎 Medium</button>
+                <button class="difficulty-btn hard" onclick="selectDifficulty('hard')">🔥 Hard</button>
+            </div>
             <button id="startBtn" onclick="startGame()">START!</button>
+            <p style="margin-top: 25px; font-size: 16px; color: #444; max-width: 450px; text-align: center; line-height: 1.6; font-style: italic;">
+                This game was created per my nephew Owen's amazing ideas; love you, from Uncle Lei
+            </p>
         </div>
 
         <div id="gameOver">
