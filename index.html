@@ -95,32 +95,56 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             border-radius: 6px;
+            padding: 20px;
         }
         #gameOver h1 {
-            font-size: 48px;
+            font-size: 42px;
             color: #ff6b6b;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         #finalScore {
-            font-size: 36px;
+            font-size: 32px;
             color: #ffd700;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+        #killStats {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        #killStats h3 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .stat-row {
+            color: #ddd;
+            font-size: 18px;
+            margin: 8px 0;
+        }
+        .stat-row span {
+            color: #ffd700;
+            font-weight: bold;
         }
         #restartBtn {
-            padding: 20px 60px;
-            font-size: 28px;
+            padding: 15px 50px;
+            font-size: 24px;
             font-family: 'Comic Sans MS', cursive;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 30px;
             cursor: pointer;
+            margin: 10px;
         }
         #controls {
             position: absolute;
@@ -130,6 +154,102 @@
             text-align: center;
             color: #fff;
             font-size: 14px;
+        }
+        /* Mobile Controls */
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.4);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .mobile-btn:active {
+            background: rgba(255,255,255,0.3);
+        }
+        .mobile-btn-small {
+            width: 50px;
+            height: 50px;
+            font-size: 14px;
+        }
+        #leftControls {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        #rightControls {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        #topRightControls {
+            position: absolute;
+            right: 10px;
+            top: 70px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        #aimControls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        #moveControls {
+            display: flex;
+            gap: 5px;
+        }
+        .fire-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,50,50,0.6);
+            border-color: rgba(255,100,100,0.8);
+            font-size: 16px;
+        }
+        .weapon-btn {
+            background: rgba(100,100,255,0.5);
+            border-color: rgba(150,150,255,0.8);
+            font-size: 12px;
+        }
+        .quit-btn {
+            background: rgba(255,100,100,0.5);
+            border-color: rgba(255,150,150,0.8);
+            font-size: 12px;
+        }
+        @media (pointer: coarse), (max-width: 1024px) {
+            #mobileControls {
+                display: block;
+            }
+            #controls {
+                display: none;
+            }
+            canvas {
+                max-width: 100vw;
+                max-height: 70vh;
+            }
         }
     </style>
 </head>
@@ -148,13 +268,46 @@
         </div>
 
         <div id="gameOver">
-            <h1>Game Over!</h1>
+            <h1 id="gameOverTitle">Game Over!</h1>
             <div id="finalScore">Score: 0</div>
+            <div id="killStats">
+                <h3>Battle Statistics</h3>
+                <div class="stat-row" style="color: #87CEEB;">Survival Time: <span id="statTime">0:00</span></div>
+                <div class="stat-row" style="border-bottom: 1px solid #555; padding-bottom: 8px; margin-bottom: 8px;"></div>
+                <div class="stat-row">Tanks: <span id="statTanks">0</span></div>
+                <div class="stat-row">Hogs: <span id="statHogs">0</span></div>
+                <div class="stat-row">Ghosts: <span id="statGhosts">0</span></div>
+                <div class="stat-row">Helicopters: <span id="statHelicopters">0</span></div>
+                <div class="stat-row" style="border-top: 1px solid #555; padding-top: 8px; margin-top: 8px;">
+                    Total Kills: <span id="statTotal">0</span>
+                </div>
+            </div>
             <button id="restartBtn" onclick="restartGame()">Play Again!</button>
         </div>
 
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div id="leftControls">
+                <div id="moveControls">
+                    <button class="mobile-btn" id="btnLeft">◀</button>
+                    <button class="mobile-btn" id="btnRight">▶</button>
+                </div>
+            </div>
+            <div id="rightControls">
+                <div id="aimControls">
+                    <button class="mobile-btn" id="btnUp">▲</button>
+                    <button class="mobile-btn" id="btnDown">▼</button>
+                </div>
+                <button class="mobile-btn fire-btn" id="btnFire">FIRE</button>
+            </div>
+            <div id="topRightControls">
+                <button class="mobile-btn mobile-btn-small weapon-btn" id="btnWeapon">SWAP</button>
+                <button class="mobile-btn mobile-btn-small quit-btn" id="btnQuit">QUIT</button>
+            </div>
+        </div>
+
         <div id="controls">
-            ⬅️➡️ Move Tank | ⬆️⬇️ Aim Barrel | SPACE Shoot | W Switch Weapon
+            ⬅️➡️ Move | ⬆️⬇️ Aim | SPACE Shoot | W Weapon | ESC Quit
         </div>
     </div>
 
@@ -169,14 +322,48 @@
         let health = 100;
         let lastShootTime = 0;
         let shootCooldown = 500;
+        let gameStartTime = 0;
 
         // Difficulty settings (reduced spawn rates for easier gameplay)
+        // minSpawnRate is the fastest spawn rate after ramping up
         const difficultySettings = {
-            baby: { enemySpeed: 0.3, spawnRate: 4500, damage: 5, healthRegen: 0.015, shootCooldown: 300, dropRate: 4000 },
-            easy: { enemySpeed: 0.5, spawnRate: 3500, damage: 8, healthRegen: 0.01, shootCooldown: 400, dropRate: 3500 },
-            medium: { enemySpeed: 0.8, spawnRate: 2800, damage: 12, healthRegen: 0.007, shootCooldown: 500, dropRate: 2800 },
-            hard: { enemySpeed: 1.2, spawnRate: 2200, damage: 18, healthRegen: 0.005, shootCooldown: 600, dropRate: 2000 }
+            baby: { enemySpeed: 0.3, spawnRate: 5000, minSpawnRate: 2500, damage: 5, healthRegen: 0.015, shootCooldown: 300, dropRate: 4000, rampTime: 180000 },
+            easy: { enemySpeed: 0.5, spawnRate: 4000, minSpawnRate: 1800, damage: 8, healthRegen: 0.01, shootCooldown: 400, dropRate: 3500, rampTime: 150000 },
+            medium: { enemySpeed: 0.8, spawnRate: 3200, minSpawnRate: 1400, damage: 12, healthRegen: 0.007, shootCooldown: 500, dropRate: 2800, rampTime: 120000 },
+            hard: { enemySpeed: 1.2, spawnRate: 2500, minSpawnRate: 1000, damage: 18, healthRegen: 0.005, shootCooldown: 600, dropRate: 2000, rampTime: 90000 }
         };
+
+        // Get current spawn rate based on time played (ramps up over time)
+        function getCurrentSpawnRate() {
+            const settings = difficultySettings[difficulty];
+            const timeElapsed = Date.now() - gameStartTime;
+            const rampProgress = Math.min(1, timeElapsed / settings.rampTime);
+
+            // Ease-in curve for smoother difficulty ramp
+            const easedProgress = rampProgress * rampProgress;
+
+            // Interpolate between starting spawn rate and minimum spawn rate
+            const currentRate = settings.spawnRate - (settings.spawnRate - settings.minSpawnRate) * easedProgress;
+            return currentRate;
+        }
+
+        // Get current enemy speed multiplier based on time played
+        function getSpeedMultiplier() {
+            const settings = difficultySettings[difficulty];
+            const timeElapsed = Date.now() - gameStartTime;
+            const rampProgress = Math.min(1, timeElapsed / settings.rampTime);
+
+            // Speed increases by up to 40% at max ramp
+            return 1 + (rampProgress * 0.4);
+        }
+
+        // Get game time in minutes:seconds format
+        function getGameTime() {
+            const timeElapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+            const minutes = Math.floor(timeElapsed / 60);
+            const seconds = timeElapsed % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
 
         // Enemy projectiles (bombs and fireballs)
         let enemyProjectiles = [];
@@ -570,6 +757,7 @@
             }
 
             const fromLeft = Math.random() > 0.5;
+            const speedMult = getSpeedMultiplier();
             const enemy = {
                 type: type,
                 x: fromLeft ? -50 : canvas.width + 50,
@@ -577,7 +765,7 @@
                     80 + Math.random() * 120 :
                     canvas.height - 100,
                 direction: fromLeft ? 1 : -1,
-                speed: settings.enemySpeed * (0.8 + Math.random() * 0.4),
+                speed: settings.enemySpeed * (0.8 + Math.random() * 0.4) * speedMult,
                 color: type === 'tank' ? '#c0392b' : '#e74c3c',
                 health: 1,
                 points: type === 'helicopter' ? 30 : type === 'ghost' ? 25 : type === 'hog' ? 15 : 20,
@@ -961,6 +1149,24 @@
             ctx.fillRect(canvas.width - 130, 50, 100, 10);
             ctx.fillStyle = cooldownProgress >= 1 ? '#4CAF50' : '#FFC107';
             ctx.fillRect(canvas.width - 130, 50, 100 * cooldownProgress, 10);
+
+            // Game time display
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Comic Sans MS';
+            ctx.fillText(`⏱️ ${getGameTime()}`, canvas.width / 2 - 30, 35);
+
+            // Difficulty indicator (shows ramping)
+            const timeElapsed = now - gameStartTime;
+            const rampProgress = Math.min(1, timeElapsed / settings.rampTime);
+            if (rampProgress < 1) {
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+                ctx.font = '12px Comic Sans MS';
+                ctx.fillText(`Danger: ${Math.round(rampProgress * 100)}%`, canvas.width / 2 - 35, 52);
+            } else {
+                ctx.fillStyle = '#ff4444';
+                ctx.font = 'bold 12px Comic Sans MS';
+                ctx.fillText('MAX DANGER!', canvas.width / 2 - 38, 52);
+            }
         }
 
         // Draw background
@@ -1039,10 +1245,10 @@
             // Handle input
             handleInput();
 
-            // Spawn enemies
+            // Spawn enemies (rate increases over time)
             const now = Date.now();
-            const settings = difficultySettings[difficulty];
-            if (now - lastSpawnTime > settings.spawnRate) {
+            const currentSpawnRate = getCurrentSpawnRate();
+            if (now - lastSpawnTime > currentSpawnRate) {
                 spawnEnemy();
                 lastSpawnTime = now;
             }
@@ -1104,17 +1310,42 @@
             enemyProjectiles = [];
             explosions = [];
             killStats = { tank: 0, hog: 0, ghost: 0, helicopter: 0 };
+            gameStartTime = Date.now();
             lastSpawnTime = Date.now();
             lastShootTime = 0;
             gameRunning = true;
             gameLoop();
         }
 
-        // Game over
-        function gameOver() {
+        // Show end screen with stats
+        function showEndScreen(isQuit) {
             gameRunning = false;
+            document.getElementById('gameOverTitle').textContent = isQuit ? 'Game Ended' : 'Game Over!';
+            document.getElementById('gameOverTitle').style.color = isQuit ? '#ffd700' : '#ff6b6b';
             document.getElementById('finalScore').textContent = `Score: ${score} ⭐`;
+
+            // Update statistics
+            document.getElementById('statTime').textContent = getGameTime();
+            document.getElementById('statTanks').textContent = killStats.tank;
+            document.getElementById('statHogs').textContent = killStats.hog;
+            document.getElementById('statGhosts').textContent = killStats.ghost;
+            document.getElementById('statHelicopters').textContent = killStats.helicopter;
+            document.getElementById('statTotal').textContent =
+                killStats.tank + killStats.hog + killStats.ghost + killStats.helicopter;
+
             document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        // Game over (health depleted)
+        function gameOver() {
+            showEndScreen(false);
+        }
+
+        // Quit game
+        function quitGame() {
+            if (gameRunning) {
+                showEndScreen(true);
+            }
         }
 
         // Restart game
@@ -1135,6 +1366,10 @@
             if (e.code === 'KeyW' && gameRunning) {
                 tank.weapon = tank.weapon === 'cannon' ? 'laser' : 'cannon';
             }
+
+            if (e.code === 'Escape' && gameRunning) {
+                quitGame();
+            }
         });
 
         document.addEventListener('keyup', (e) => {
@@ -1148,8 +1383,108 @@
             }
         });
 
+        // Mobile touch controls
+        function setupMobileControls() {
+            const btnLeft = document.getElementById('btnLeft');
+            const btnRight = document.getElementById('btnRight');
+            const btnUp = document.getElementById('btnUp');
+            const btnDown = document.getElementById('btnDown');
+            const btnFire = document.getElementById('btnFire');
+            const btnWeapon = document.getElementById('btnWeapon');
+            const btnQuit = document.getElementById('btnQuit');
+
+            // Helper to handle touch start/end
+            function addTouchControl(btn, keyCode) {
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[keyCode] = true;
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    keys[keyCode] = false;
+                });
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    keys[keyCode] = false;
+                });
+                // Also support mouse for testing
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    keys[keyCode] = true;
+                });
+                btn.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    keys[keyCode] = false;
+                });
+                btn.addEventListener('mouseleave', (e) => {
+                    keys[keyCode] = false;
+                });
+            }
+
+            addTouchControl(btnLeft, 'ArrowLeft');
+            addTouchControl(btnRight, 'ArrowRight');
+            addTouchControl(btnUp, 'ArrowUp');
+            addTouchControl(btnDown, 'ArrowDown');
+
+            // Fire button
+            btnFire.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning) shoot();
+            });
+            btnFire.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (gameRunning) shoot();
+            });
+
+            // Weapon swap button
+            btnWeapon.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning) {
+                    tank.weapon = tank.weapon === 'cannon' ? 'laser' : 'cannon';
+                }
+            });
+            btnWeapon.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (gameRunning) {
+                    tank.weapon = tank.weapon === 'cannon' ? 'laser' : 'cannon';
+                }
+            });
+
+            // Quit button
+            btnQuit.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                quitGame();
+            });
+            btnQuit.addEventListener('click', (e) => {
+                e.preventDefault();
+                quitGame();
+            });
+        }
+
+        // Initialize mobile controls
+        setupMobileControls();
+
         // Select easy by default
         document.querySelector('.easy').classList.add('selected');
+
+        // Handle canvas resize for mobile
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight * 0.65;
+
+            if (window.innerWidth <= 1024 || 'ontouchstart' in window) {
+                const ratio = Math.min(maxWidth / 1000, maxHeight / 600);
+                canvas.style.width = (1000 * ratio) + 'px';
+                canvas.style.height = (600 * ratio) + 'px';
+            } else {
+                canvas.style.width = '';
+                canvas.style.height = '';
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
     </script>
 </body>
 </html>
